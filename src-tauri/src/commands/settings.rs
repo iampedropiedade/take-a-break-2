@@ -23,7 +23,8 @@ pub fn update_settings(
     data.settings = settings;
     persistence::save_app_data(&app, &data)?;
     crate::tray::refresh_menu(&app, data.settings.paused);
-    crate::tray::refresh_label(&app, &data, Local::now().naive_local());
+    let sched = state.scheduler_state.lock().unwrap();
+    crate::tray::refresh_label(&app, &data, &sched, Local::now().naive_local());
     let _ = app.emit(SETTINGS_CHANGED_EVENT, data.settings.clone());
     Ok(())
 }
@@ -41,6 +42,7 @@ pub fn toggle_paused_from_tray(app: &AppHandle) {
         log::error!("failed to persist settings: {e}");
     }
     crate::tray::refresh_menu(app, data.settings.paused);
-    crate::tray::refresh_label(app, &data, Local::now().naive_local());
+    let sched = state.scheduler_state.lock().unwrap();
+    crate::tray::refresh_label(app, &data, &sched, Local::now().naive_local());
     let _ = app.emit(SETTINGS_CHANGED_EVENT, data.settings.clone());
 }

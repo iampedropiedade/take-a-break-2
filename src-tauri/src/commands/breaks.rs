@@ -1,3 +1,4 @@
+use chrono::Local;
 use tauri::{AppHandle, State};
 use uuid::Uuid;
 
@@ -21,6 +22,8 @@ pub fn create_break(
     let mut data = state.data.lock().unwrap();
     data.breaks.push(new_break.clone());
     persistence::save_app_data(&app, &data)?;
+    let sched = state.scheduler_state.lock().unwrap();
+    crate::tray::refresh_label(&app, &data, &sched, Local::now().naive_local());
     Ok(new_break)
 }
 
@@ -67,5 +70,8 @@ fn clear_scheduler_state_for(
     sched.last_fired.remove(&id);
     sched.postponed.remove(&id);
     sched.skipped_today.remove(&id);
-    persistence::save_state(app, &sched)
+    persistence::save_state(app, &sched)?;
+    let data = state.data.lock().unwrap();
+    crate::tray::refresh_label(app, &data, &sched, Local::now().naive_local());
+    Ok(())
 }

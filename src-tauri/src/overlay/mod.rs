@@ -59,14 +59,20 @@ fn build_window(app: &AppHandle, label: String, init_script: &str, monitor: Opti
 
     builder = match monitor {
         Some(monitor) => {
-            // Monitor size/position are physical pixels; the window builder
-            // expects logical ones, so this must go through the monitor's
-            // own scale factor rather than being passed through as-is (on a
+            // `work_area` (not `size`/`position`) excludes the macOS menu
+            // bar (and the Dock, on the monitor that has it) — using the
+            // raw monitor bounds instead placed the window's top edge under
+            // the menu bar, cutting off the close button rendered near it.
+            //
+            // Monitor bounds are physical pixels; the window builder expects
+            // logical ones, so this must go through the monitor's own scale
+            // factor rather than being passed through as-is (on a
             // Retina/HiDPI display that previously produced a window twice
             // the screen's actual logical size).
             let scale = monitor.scale_factor();
-            let logical_size = monitor.size().to_logical::<f64>(scale);
-            let logical_position = monitor.position().to_logical::<f64>(scale);
+            let work_area = monitor.work_area();
+            let logical_size = work_area.size.to_logical::<f64>(scale);
+            let logical_position = work_area.position.to_logical::<f64>(scale);
             builder
                 .inner_size(logical_size.width, logical_size.height)
                 .position(logical_position.x, logical_position.y)

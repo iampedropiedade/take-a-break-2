@@ -55,7 +55,8 @@ fn tick(
     let data = app_data.lock().unwrap();
 
     if data.settings.paused {
-        crate::tray::refresh_label(app, &data, Local::now().naive_local());
+        let sched = scheduler_state.lock().unwrap();
+        crate::tray::refresh_label(app, &data, &sched, Local::now().naive_local());
         return;
     }
 
@@ -77,7 +78,8 @@ fn tick(
         }
     }
 
-    crate::tray::refresh_label(app, &data, now);
+    let sched = scheduler_state.lock().unwrap();
+    crate::tray::refresh_label(app, &data, &sched, now);
 }
 
 fn fire(app: &AppHandle, data: &AppData, b: &Break) {

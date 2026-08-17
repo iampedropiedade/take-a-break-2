@@ -36,7 +36,9 @@ function tick() {
   countdownValueEl.textContent = formatCountdown(remaining);
   if (remaining <= 0) {
     clearInterval(intervalId);
-    getCurrentWindow().close();
+    getCurrentWindow()
+      .close()
+      .catch((err) => console.error("failed to auto-close break window", err));
   }
 }
 

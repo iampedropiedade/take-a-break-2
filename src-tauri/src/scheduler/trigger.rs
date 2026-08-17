@@ -69,25 +69,47 @@ pub fn compute_due_breaks(
     due
 }
 
-/// Finds the soonest upcoming (day, start_time) match across all enabled
-/// breaks, looking up to a week ahead. Used to drive the tray label.
-pub fn next_occurrence(now: NaiveDateTime, breaks: &[Break]) -> Option<NaiveDateTime> {
+/// Finds the soonest upcoming fire time across all enabled breaks, looking
+/// up to a week ahead. Used to drive the tray label, so it needs to agree
+/// with `compute_due_breaks`'s actual firing decisions — a postponed break
+/// bypasses its regular day/time entirely (matching the postponed branch
+/// above), and a break already fired or skipped today is not due again
+/// today (matching the checks above), so both are accounted for here too.
+pub fn next_occurrence(
+    now: NaiveDateTime,
+    breaks: &[Break],
+    state: &SchedulerState,
+) -> Option<NaiveDateTime> {
     let mut soonest: Option<NaiveDateTime> = None;
 
-    for offset in 0..7 {
-        let day = now.date() + Duration::days(offset);
-        let weekday = day.weekday();
+    for b in breaks {
+        if !b.enabled {
+            continue;
+        }
 
-        for b in breaks {
-            if !b.enabled || !b.days.contains(&weekday) {
-                continue;
-            }
+        let candidate = if let Some(&postponed_at) = state.postponed.get(&b.id) {
+            Some(postponed_at)
+        } else {
+            (0..7).find_map(|offset| {
+                let day = now.date() + Duration::days(offset);
+                if !b.days.contains(&day.weekday()) {
+                    return None;
+                }
+                let at = day.and_time(b.start_time);
+                if at < now {
+                    return None;
+                }
+                if state.last_fired.get(&b.id) == Some(&day) {
+                    return None;
+                }
+                if state.skipped_today.get(&b.id) == Some(&day) {
+                    return None;
+                }
+                Some(at)
+            })
+        };
 
-            let candidate = day.and_time(b.start_time);
-            if candidate < now {
-                continue;
-            }
-
+        if let Some(candidate) = candidate {
             if soonest.is_none_or(|s| candidate < s) {
                 soonest = Some(candidate);
             }
@@ -265,7 +287,7 @@ mod tests {
     fn next_occurrence_same_day() {
         let id = Uuid::new_v4();
         let breaks = vec![daily_break(id, NaiveTime::from_hms_opt(14, 0, 0).unwrap())];
-        let next = next_occurrence(monday_9am(), &breaks).unwrap();
+        let next = next_occurrence(monday_9am(), &breaks, &SchedulerState::default()).unwrap();
         assert_eq!(next, dt(2026, 8, 17, 14, 0));
     }
 
@@ -273,7 +295,7 @@ mod tests {
     fn next_occurrence_rolls_to_next_day_once_todays_time_has_passed() {
         let id = Uuid::new_v4();
         let breaks = vec![daily_break(id, NaiveTime::from_hms_opt(8, 0, 0).unwrap())];
-        let next = next_occurrence(monday_9am(), &breaks).unwrap();
+        let next = next_occurrence(monday_9am(), &breaks, &SchedulerState::default()).unwrap();
         assert_eq!(next, dt(2026, 8, 18, 8, 0));
     }
 
@@ -282,12 +304,62 @@ mod tests {
         let id = Uuid::new_v4();
         let mut b = daily_break(id, NaiveTime::from_hms_opt(9, 0, 0).unwrap());
         b.days = HashSet::from([Weekday::Fri]); // Checked from a Monday.
-        let next = next_occurrence(monday_9am(), &[b]).unwrap();
+        let next = next_occurrence(monday_9am(), &[b], &SchedulerState::default()).unwrap();
         assert_eq!(next, dt(2026, 8, 21, 9, 0)); // Friday of the same week.
     }
 
     #[test]
     fn next_occurrence_none_when_no_enabled_breaks() {
-        assert_eq!(next_occurrence(monday_9am(), &[]), None);
+        assert_eq!(
+            next_occurrence(monday_9am(), &[], &SchedulerState::default()),
+            None
+        );
+    }
+
+    #[test]
+    fn next_occurrence_reflects_a_postponed_break() {
+        let id = Uuid::new_v4();
+        let breaks = vec![daily_break(id, NaiveTime::from_hms_opt(9, 0, 0).unwrap())];
+        let mut state = SchedulerState::default();
+        // Postponed 10 minutes past the 9am tray-visible moment, well past
+        // its regular start time — the tray should reflect the postponed
+        // time, not the (already-past) regular schedule.
+        let postponed_at = dt(2026, 8, 17, 9, 10);
+        state.postponed.insert(id, postponed_at);
+
+        let next = next_occurrence(monday_9am(), &breaks, &state).unwrap();
+        assert_eq!(next, postponed_at);
+    }
+
+    #[test]
+    fn next_occurrence_skips_a_break_already_fired_today() {
+        let id = Uuid::new_v4();
+        // Two occurrences: one later today, one available again tomorrow.
+        let breaks = vec![daily_break(id, NaiveTime::from_hms_opt(8, 0, 0).unwrap())];
+        let mut state = SchedulerState::default();
+        state
+            .last_fired
+            .insert(id, NaiveDate::from_ymd_opt(2026, 8, 17).unwrap());
+
+        // 8am already passed and is marked fired today, so the next
+        // occurrence should roll to tomorrow rather than showing a stale
+        // already-handled time from earlier today.
+        let next = next_occurrence(monday_9am(), &breaks, &state).unwrap();
+        assert_eq!(next, dt(2026, 8, 18, 8, 0));
+    }
+
+    #[test]
+    fn next_occurrence_skips_a_break_skipped_today() {
+        let id = Uuid::new_v4();
+        let breaks = vec![daily_break(id, NaiveTime::from_hms_opt(14, 0, 0).unwrap())];
+        let mut state = SchedulerState::default();
+        state
+            .skipped_today
+            .insert(id, NaiveDate::from_ymd_opt(2026, 8, 17).unwrap());
+
+        // 2pm today is cancelled, so despite being later today and still in
+        // the future, it shouldn't show as the next occurrence.
+        let next = next_occurrence(monday_9am(), &breaks, &state).unwrap();
+        assert_eq!(next, dt(2026, 8, 18, 14, 0));
     }
 }

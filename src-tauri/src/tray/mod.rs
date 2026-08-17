@@ -7,6 +7,7 @@ use tauri::tray::{TrayIcon, TrayIconBuilder};
 use tauri::{AppHandle, Wry};
 
 use crate::models::AppData;
+use crate::scheduler::state::SchedulerState;
 use crate::scheduler::trigger::next_occurrence;
 
 const TRAY_ID: &str = "main-tray";
@@ -64,11 +65,16 @@ pub fn refresh_menu(app: &AppHandle, paused: bool) {
     }
 }
 
-pub fn refresh_label(app: &AppHandle, data: &AppData, now: NaiveDateTime) {
+pub fn refresh_label(
+    app: &AppHandle,
+    data: &AppData,
+    scheduler_state: &SchedulerState,
+    now: NaiveDateTime,
+) {
     let text = if data.settings.paused {
         "Paused".to_string()
     } else {
-        match next_occurrence(now, &data.breaks) {
+        match next_occurrence(now, &data.breaks, scheduler_state) {
             Some(next) => {
                 let minutes = (next - now).num_minutes().max(0);
                 label::format_remaining(minutes)
