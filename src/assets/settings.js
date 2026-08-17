@@ -37,9 +37,31 @@ let selectedDays = new Set();
 let selectedImageFilename = null;
 let saveTimer = null;
 
+// A blocking alert() here would freeze the whole window — if a burst of
+// rapid clicks (e.g. toggling a checkbox repeatedly) produced several
+// errors at once, each alert() has to be dismissed before the next runs,
+// which reads as the app having hung. A transient on-page toast never
+// blocks input.
 function reportError(context, err) {
   console.error(context, err);
-  alert(`${context}: ${err}`);
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.textContent = `${context}: ${err}`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// Every #<field>.addEventListener("change", saveBreakNow) fires independently,
+// so rapidly toggling a checkbox a few times queues up that many concurrent
+// invoke() calls. Chaining them through this queue makes them run one at a
+// time instead — each still saves the current (latest) form state when its
+// turn comes, so nothing is lost, but there's no longer a pile of overlapping
+// backend writes in flight at once.
+let saveQueue = Promise.resolve();
+function enqueue(fn) {
+  const result = saveQueue.then(fn, fn);
+  saveQueue = result;
+  return result;
 }
 
 function dayButtons() {
@@ -102,19 +124,23 @@ async function loadSettings() {
 // this window is open, rather than only reading settings once at load.
 listen("settings-changed", (event) => applySettingsToUI(event.payload));
 
-async function saveSettings() {
-  try {
-    const settings = {
-      paused: !activeToggle.checked,
-      default_display_mode: defaultDisplayModeSelect.value,
-      cancel_on_call: cancelOnCallToggle.checked,
-      show_on_all_screens: showOnAllScreensToggle.checked,
-      autostart: autostartToggle.checked,
-    };
-    await invoke("update_settings", { settings });
-  } catch (err) {
-    reportError("Failed to save settings", err);
-  }
+// Queued via `enqueue` for the same reason as saveBreakNow: rapidly
+// toggling a switch a few times should save one at a time, not concurrently.
+function saveSettings() {
+  return enqueue(async () => {
+    try {
+      const settings = {
+        paused: !activeToggle.checked,
+        default_display_mode: defaultDisplayModeSelect.value,
+        cancel_on_call: cancelOnCallToggle.checked,
+        show_on_all_screens: showOnAllScreensToggle.checked,
+        autostart: autostartToggle.checked,
+      };
+      await invoke("update_settings", { settings });
+    } catch (err) {
+      reportError("Failed to save settings", err);
+    }
+  });
 }
 
 async function loadBreaks() {
@@ -255,21 +281,24 @@ function buildBreakPayload() {
 // There's no Save button — every change persists on its own. Discrete
 // controls (selects, checkboxes, day toggles, image picks) save right away;
 // free-text fields debounce briefly so we're not writing on every keystroke.
-async function saveBreakNow() {
+// Queued via `enqueue` so rapid repeated changes save one at a time.
+function saveBreakNow() {
   clearTimeout(saveTimer);
   saveTimer = null;
 
-  const payload = buildBreakPayload();
-  try {
-    if (editingId) {
-      await invoke("update_break", { updated: payload });
-    } else {
-      const created = await invoke("create_break", { newBreak: payload });
-      editingId = created.id;
+  return enqueue(async () => {
+    const payload = buildBreakPayload();
+    try {
+      if (editingId) {
+        await invoke("update_break", { updated: payload });
+      } else {
+        const created = await invoke("create_break", { newBreak: payload });
+        editingId = created.id;
+      }
+    } catch (err) {
+      reportError("Failed to save break", err);
     }
-  } catch (err) {
-    reportError("Failed to save break", err);
-  }
+  });
 }
 
 function scheduleBreakSave() {

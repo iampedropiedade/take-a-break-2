@@ -381,3 +381,22 @@ button.icon-label-btn {
 .toggle input:checked ~ .toggle-track .toggle-thumb {
   transform: translateX(16px);
 }
+
+/* Non-blocking error notice — deliberately not a native alert(), which
+   would freeze the whole window until dismissed (and stack up badly if
+   several errors land in a burst). */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--danger);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  max-width: 80%;
+  text-align: center;
+}

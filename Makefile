@@ -11,8 +11,19 @@ help: ## Show this help
 dev: ## Run the app in development mode with hot reload
 	$(CARGO) tauri dev
 
-build: ## Build a release bundle for the current platform
+build: ## Build a release bundle for the current platform (macOS: ad-hoc signs it if no Developer ID is configured, since UNUserNotificationCenter requires a signed bundle)
 	$(CARGO) tauri build
+	@if [ "$$(uname)" = "Darwin" ]; then \
+		APP=$$(find src-tauri/target/release/bundle/macos -maxdepth 1 -iname '*.app' 2>/dev/null | head -1); \
+		if [ -n "$$APP" ]; then \
+			if codesign -dv "$$APP" >/dev/null 2>&1; then \
+				echo "$$APP is already signed, leaving it as-is"; \
+			else \
+				echo "Ad-hoc signing $$APP (no Developer ID configured — see README)"; \
+				codesign --force --deep --sign - "$$APP"; \
+			fi; \
+		fi; \
+	fi
 
 check: ## Type-check the Rust code without building
 	$(CARGO) check $(MANIFEST) --all-targets

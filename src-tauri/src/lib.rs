@@ -12,13 +12,12 @@ mod tray;
 use std::sync::{Arc, Mutex};
 
 use tauri::{Manager, WindowEvent};
-use tauri_plugin_notification::NotificationExt;
 
 use app_state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             commands::open_settings_window(app);
         }))
@@ -26,8 +25,15 @@ pub fn run() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
         ))
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init());
+
+    // On macOS, notifications go through `mac-usernotifications` (see
+    // `notify.rs`) instead — the legacy NSUserNotification API this plugin
+    // uses by default there doesn't reliably deliver.
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.plugin(tauri_plugin_notification::init());
+
+    builder
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -57,7 +63,7 @@ pub fn run() {
 
             tray::build_tray(&handle, paused)?;
 
-            let _ = app.notification().request_permission();
+            notify::request_permission(&handle);
 
             scheduler::spawn(handle, data, sched, call_detector);
 

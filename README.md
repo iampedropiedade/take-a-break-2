@@ -10,7 +10,7 @@ vanilla HTML/CSS/JS frontend (`src/`), with no bundler or JS framework.
 
 ## Requirements
 
-- [Rust](https://rustup.rs/) (stable toolchain; MSRV is 1.82, see `src-tauri/Cargo.toml`)
+- [Rust](https://rustup.rs/) (stable toolchain; MSRV is 1.90, see `src-tauri/Cargo.toml`)
 - [Tauri CLI](https://v2.tauri.app/reference/cli/): `cargo install tauri-cli --version "^2"`
 - **macOS**: Xcode Command Line Tools (`xcode-select --install`). Regenerating the tray/UI
   icons additionally needs the Swift toolchain, which ships with the Command Line Tools.
@@ -106,6 +106,25 @@ This only works on macOS (SF Symbols are an AppKit API).
 
 ## Known limitations
 
+- **Notification-style breaks only work from a real build, never from `cargo tauri dev`.**
+  On macOS, notifications go through `UNUserNotificationCenter` (see `notify.rs`) rather
+  than `tauri-plugin-notification`'s default backend, which relies on the deprecated
+  `NSUserNotification` API and was found to silently do nothing — permission shows as
+  granted, the API call reports success, but nothing ever displays. `UNUserNotificationCenter`
+  fixes that, but it fundamentally requires the process to be a signed `.app` bundle; a raw
+  `cargo tauri dev` binary can't use it at all. **`cargo tauri build` does not sign the
+  bundle by default** — there's no `bundle.macOS.signingIdentity` configured in
+  `tauri.conf.json`, so both debug and release builds come out unsigned unless you add a
+  Developer ID there (or set `APPLE_CERTIFICATE`/`APPLE_CERTIFICATE_PASSWORD` for CI). To
+  test notification-style breaks without a paid Developer ID, ad-hoc sign the bundle
+  yourself after building — a plain `-` identity is sufficient for local testing (not for
+  distribution):
+  ```sh
+  cargo tauri build --debug
+  codesign --force --deep --sign - "src-tauri/target/debug/bundle/macos/Take a Break.app"
+  open "src-tauri/target/debug/bundle/macos/Take a Break.app"
+  ```
+  Fullscreen breaks are unaffected by any of this — they're plain windows, not notifications.
 - Call detection ("Cancel breaks when on a call") is a best-effort CoreAudio mic-in-use
   poll on macOS; it's a stub that always reports "not on a call" on Linux.
 - The fullscreen overlay intentionally renders below the macOS menu bar strip rather than
