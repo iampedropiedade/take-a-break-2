@@ -162,7 +162,10 @@ function renderBreaks() {
     return;
   }
 
-  for (const b of breaks) {
+  // "HH:MM:SS" sorts correctly as a plain string, so no parsing needed.
+  // Sorted by time of day regardless of which days each break is active on.
+  const sorted = [...breaks].sort((a, b) => a.start_time.localeCompare(b.start_time));
+  for (const b of sorted) {
     const row = document.createElement("div");
     row.className = "break-row" + (b.enabled ? "" : " disabled");
 
