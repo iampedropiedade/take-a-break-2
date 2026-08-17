@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Take a Break: Settings</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <div class="app" id="page-list">
+    <h1>Take a Break</h1>
+
+    <section class="panel">
+      <h2>General</h2>
+      <div class="field-row">
+        <label for="active-toggle">
+          Breaks are active
+          <span class="field-hint">Turn off to stop all breaks from triggering.</span>
+        </label>
+        <span class="toggle">
+          <input type="checkbox" id="active-toggle" />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </span>
+      </div>
+      <div class="field-row">
+        <label for="default-display-mode">
+          Default break style
+          <span class="field-hint">Used unless a break overrides it.</span>
+        </label>
+        <select id="default-display-mode">
+          <option value="fullscreen">Fullscreen</option>
+          <option value="notification">Notification</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <label for="cancel-on-call-toggle">
+          Cancel breaks when on a call
+          <span class="field-hint">Best-effort mic-in-use detection (macOS only for now).</span>
+        </label>
+        <span class="toggle">
+          <input type="checkbox" id="cancel-on-call-toggle" />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </span>
+      </div>
+      <div class="field-row">
+        <label for="show-on-all-screens-toggle">
+          Show fullscreen breaks on all displays
+          <span class="field-hint">If off, the break only appears on your primary display.</span>
+        </label>
+        <span class="toggle">
+          <input type="checkbox" id="show-on-all-screens-toggle" />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </span>
+      </div>
+      <div class="field-row">
+        <label for="autostart-toggle">
+          Launch at login
+        </label>
+        <span class="toggle">
+          <input type="checkbox" id="autostart-toggle" />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Breaks</h2>
+        <button class="primary icon-label-btn" id="add-break-btn"><span class="icon icon-plus"></span>Add break</button>
+      </div>
+      <div class="breaks-list" id="breaks-list"></div>
+    </section>
+  </div>
+
+  <div class="app hidden" id="page-edit">
+    <div class="page-edit-header">
+      <button type="button" id="break-cancel-btn" class="icon-label-btn"><span class="icon icon-chevron-left"></span>Back</button>
+      <h1 id="break-edit-title">Add break</h1>
+    </div>
+
+    <div id="break-form" class="panel edit-form">
+
+      <div class="field-row">
+        <label for="break-enabled">Enabled</label>
+        <span class="toggle">
+          <input type="checkbox" id="break-enabled" checked />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="break-type">Type</label>
+          <select id="break-type">
+            <option value="Hydration">Hydration</option>
+            <option value="Stretch">Stretch</option>
+            <option value="Eat">Eat</option>
+            <option value="Custom">Custom…</option>
+          </select>
+        </div>
+        <div class="form-group" id="break-type-custom-group" style="display: none">
+          <label for="break-type-custom">Custom label</label>
+          <input type="text" id="break-type-custom" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="break-start-time">Start time</label>
+          <input type="time" id="break-start-time" required />
+        </div>
+        <div class="form-group">
+          <label for="break-duration">Duration (minutes)</label>
+          <input type="number" id="break-duration" min="1" max="180" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Days</label>
+        <div class="days-picker" id="break-days"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="break-display-mode">Display style</label>
+        <select id="break-display-mode">
+          <option value="">Use default</option>
+          <option value="fullscreen">Fullscreen</option>
+          <option value="notification">Notification</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Image</label>
+        <div class="image-picker">
+          <div class="image-preview" id="break-image-preview"></div>
+          <button type="button" id="break-image-pick-btn" class="icon-label-btn"><span class="icon icon-photo"></span>Choose image…</button>
+          <button type="button" id="break-image-clear-btn" class="icon-btn" title="Remove image"><span class="icon icon-xmark"></span></button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="break-message">Message</label>
+        <textarea id="break-message" placeholder="Take a break now"></textarea>
+      </div>
+
+
+    </div>
+  </div>
+
+  <script src="assets/settings.js"></script>
+</body>
+</html>

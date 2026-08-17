@@ -1,0 +1,383 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f5f5f7;
+  --panel: #ffffff;
+  --text: #1c1c1e;
+  --text-muted: #6e6e73;
+  --border: #d8d8dc;
+  --accent: #0a7cff;
+  --accent-text: #ffffff;
+  --danger: #d92d20;
+  --control-bg: #e4e4e9;
+  --control-bg-hover: #d7d7dc;
+  --toggle-off: #d0d0d5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1c1e;
+    --panel: #2c2c2e;
+    --text: #f2f2f7;
+    --text-muted: #9a9aa0;
+    --border: #3a3a3c;
+    --accent: #0a84ff;
+    --accent-text: #ffffff;
+    --danger: #ff453a;
+    --control-bg: #48484a;
+    --control-bg-hover: #565658;
+    --toggle-off: #57575a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+}
+
+.app {
+  padding: 20px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+h2 {
+  font-size: 14px;
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  gap: 16px;
+}
+
+.field-row + .field-row {
+  border-top: 1px solid var(--border);
+}
+
+.field-row label {
+  flex: 1;
+}
+
+.field-hint {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+input[type="text"], input[type="number"], input[type="time"], textarea {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 11px;
+  font: inherit;
+  line-height: 1.2;
+}
+
+textarea {
+  width: 100%;
+  min-height: 70px;
+  resize: vertical;
+}
+
+/* Pill-shaped controls (buttons + selects) matching macOS System Settings'
+   bordered/pop-up-button look — a light gray capsule rather than a bordered
+   rectangle, which is what makes them read as "native" rather than as
+   generic web form controls. */
+button, select {
+  font: inherit;
+  line-height: 1.2;
+  border-radius: 999px;
+  border: none;
+  background: var(--control-bg);
+  color: var(--text);
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+button:hover, select:hover {
+  background: var(--control-bg-hover);
+}
+
+/* Native <select> chrome ignores author padding/appearance in WebKit unless
+   the default rendering is stripped — otherwise it renders as a plain
+   rectangular control taller than the pill buttons beside it. The double
+   up/down chevron (rather than one downward arrow) mirrors macOS's own
+   pop-up-button glyph, e.g. the "Notify ⌃⌄" control in System Settings. */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16'%3E%3Cpath d='M1 6l4-4 4 4' stroke='%23888888' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M1 10l4 4 4-4' stroke='%23888888' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 9px 14px;
+}
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+button.primary:hover {
+  filter: brightness(1.08);
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Real Apple SF Symbols, exported (via scripts/export-sf-symbols.swift) as
+   alpha-only PNG masks — applied through `mask-image` with
+   `background-color: currentColor` so they tint exactly like native
+   SF Symbols do (inherit the button's text color, including hover/danger
+   states) instead of being baked-in fixed-color images. */
+.icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  flex-shrink: 0;
+}
+
+.icon-pencil { -webkit-mask-image: url("icons/pencil.png"); mask-image: url("icons/pencil.png"); }
+.icon-trash { -webkit-mask-image: url("icons/trash.png"); mask-image: url("icons/trash.png"); }
+.icon-plus { -webkit-mask-image: url("icons/plus.png"); mask-image: url("icons/plus.png"); }
+.icon-xmark { -webkit-mask-image: url("icons/xmark.png"); mask-image: url("icons/xmark.png"); }
+.icon-chevron-left { -webkit-mask-image: url("icons/chevron-left.png"); mask-image: url("icons/chevron-left.png"); }
+.icon-photo { -webkit-mask-image: url("icons/photo.png"); mask-image: url("icons/photo.png"); }
+
+button.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+button.icon-label-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.panel-header h2 {
+  margin: 0;
+}
+
+.breaks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.break-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.break-row.disabled {
+  opacity: 0.5;
+}
+
+.break-row .meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.break-row .type-label {
+  font-weight: 600;
+}
+
+.break-row .detail {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.break-row .actions {
+  display: flex;
+  gap: 6px;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  padding: 12px 0;
+  text-align: center;
+}
+
+.page-edit-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-edit-header h1 {
+  flex: 1;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 28px 32px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.days-picker {
+  display: flex;
+  gap: 6px;
+}
+
+.day-toggle {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  font-size: 11px;
+  border-radius: 999px;
+}
+
+.day-toggle.active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.image-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.image-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg) center/cover no-repeat;
+  flex-shrink: 0;
+}
+
+/* macOS-style toggle switch, replacing the default checkbox look. The real
+   <input type="checkbox"> is stretched invisibly over the whole control (so
+   clicking/keyboard/label-for behavior all still work exactly like a normal
+   checkbox) and the track + thumb are drawn as siblings purely for visuals. */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--toggle-off);
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.toggle input:checked ~ .toggle-track {
+  background: var(--accent);
+}
+
+.toggle input:checked ~ .toggle-track .toggle-thumb {
+  transform: translateX(16px);
+}

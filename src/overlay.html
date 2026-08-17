@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Break</title>
+  <link rel="stylesheet" href="assets/overlay.css" />
+</head>
+<body id="body">
+  <div class="scrim"></div>
+
+  <button type="button" id="close-btn" aria-label="Skip break">✕</button>
+
+  <div class="content">
+    <div class="message" id="message">Take a break now</div>
+    <div class="countdown">
+      <span class="countdown-value" id="countdown-value">--:--</span>
+      <span class="countdown-label">remaining</span>
+    </div>
+    <div class="controls">
+      <button type="button" id="skip-btn">Skip break</button>
+      <div class="postpone-wrap">
+        <button type="button" id="postpone-btn">Postpone</button>
+        <div class="postpone-menu hidden" id="postpone-menu">
+          <button type="button" data-minutes="1">1 minute</button>
+          <button type="button" data-minutes="2">2 minutes</button>
+          <button type="button" data-minutes="5">5 minutes</button>
+          <button type="button" data-minutes="10">10 minutes</button>
+          <button type="button" data-minutes="15">15 minutes</button>
+          <button type="button" data-minutes="30">30 minutes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/overlay.js"></script>
+</body>
+</html>
